@@ -1,0 +1,38 @@
+from nornir import InitNornir
+from nornir_netmiko.tasks import netmiko_send_command, netmiko_send_config
+from nornir_utils.plugins.functions import print_result
+import os
+from datetime import datetime
+
+def create_backups_dir():
+    if not os.path.exists(BACKUP_DIR):
+        os.mkdir(BACKUP_DIR)
+
+def save_to_file(method, hostname, config):
+    date_time = datetime.now().strftime("%m%d%Y_%H%M%S")
+    filename =  f"{hostname}-{method}-{date_time}.cfg"
+    with open(os.path.join(BACKUP_DIR, filename), "w") as f:
+        f.write(config)
+    print(hostname+" "+method+" OK!")            
+        
+def get_netmiko(name,command):
+    results = nr.run(
+        task=netmiko_send_command, 
+        command_string=command
+        )
+    for hostname in results:
+        save_to_file(
+            method=name,
+            hostname=hostname,
+            config=results[hostname][0].result,
+        )
+       
+        
+BACKUP_DIR = "backups/"
+create_backups_dir() 
+
+nr = InitNornir('config.yaml')
+get_netmiko("backup","show config")
+
+nr = InitNornir('config.yaml')
+get_netmiko("interfaces","show interf terse")
